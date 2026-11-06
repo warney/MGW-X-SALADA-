@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   X,
   Lock,
@@ -25,6 +25,7 @@ import { Product } from '../types';
 import { formatCurrency, cleanPhoneNumber, formatPhoneDisplay } from '../utils/formatters';
 import { processUploadedImage } from '../utils/imageStorage';
 import { OFFICIAL_LOGO_URL } from '../data/defaultData';
+import { supabase, ADMIN_EMAIL } from '../lib/supabase';
 
 interface PreviewModalData {
   productId: string;
@@ -48,6 +49,7 @@ export const AdminModal: React.FC = () => {
     resetToDefaults,
   } = useStore();
 
+  const [emailInput, setEmailInput] = useState(ADMIN_EMAIL);
   const [passwordInput, setPasswordInput] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -61,7 +63,7 @@ export const AdminModal: React.FC = () => {
   const [tempAddress, setTempAddress] = useState(config.address);
   const [tempHours, setTempHours] = useState(config.openingHours);
   const [tempIsOpen, setTempIsOpen] = useState(config.isOpen);
-  const [newAdminPassword, setNewAdminPassword] = useState('');
+
 
   // Image management state
   const [previewModal, setPreviewModal] = useState<PreviewModalData | null>(null);
@@ -69,26 +71,41 @@ export const AdminModal: React.FC = () => {
   const [imageSuccess, setImageSuccess] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  useEffect(() => {
+    if (!isAdminOpen) return;
+    supabase.auth.getSession().then(({ data }) => {
+      const user = data.session?.user;
+      if (user?.email?.toLowerCase() === ADMIN_EMAIL) setIsAuthenticated(true);
+    });
+  }, [isAdminOpen]);
+
   // Hidden file input ref mapped by product ID
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
   if (!isAdminOpen) return null;
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordInput === config.adminPassword || passwordInput === 'admin') {
-      setIsAuthenticated(true);
-      setAuthError('');
-      // sync temp states
-      setTempWhatsapp(config.whatsappNumber);
-      setTempStoreName(config.storeName);
-      setTempSlogan(config.slogan);
-      setTempAddress(config.address);
-      setTempHours(config.openingHours);
-      setTempIsOpen(config.isOpen);
-    } else {
-      setAuthError('Senha incorreta! A senha padrão é "admin".');
+    setAuthError('');
+    if (emailInput.trim().toLowerCase() !== ADMIN_EMAIL) {
+      setAuthError('E-mail sem autorização para acessar este painel.');
+      return;
     }
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: emailInput.trim(),
+      password: passwordInput,
+    });
+    if (error || data.user?.email?.toLowerCase() !== ADMIN_EMAIL) {
+      setAuthError('Não foi possível entrar. Confira o e-mail e a senha.');
+      return;
+    }
+    setIsAuthenticated(true);
+    setTempWhatsapp(config.whatsappNumber);
+    setTempStoreName(config.storeName);
+    setTempSlogan(config.slogan);
+    setTempAddress(config.address);
+    setTempHours(config.openingHours);
+    setTempIsOpen(config.isOpen);
   };
 
   const handleSaveStoreConfig = () => {
@@ -99,7 +116,6 @@ export const AdminModal: React.FC = () => {
       address: tempAddress,
       openingHours: tempHours,
       isOpen: tempIsOpen,
-      ...(newAdminPassword ? { adminPassword: newAdminPassword } : {}),
     });
 
     setSaveFeedback(true);
@@ -252,24 +268,31 @@ export const AdminModal: React.FC = () => {
               <p className="text-xs text-zinc-400">
                 Digite a senha de administrador da loja para alterar fotos, preços e configurações.
               </p>
-              <p className="text-[11px] text-amber-400/80 font-mono mt-1">
-                (Senha padrão inicial: <span className="underline font-bold">admin</span>)
+              <p className="text-[11px] text-zinc-500 mt-1">
+                Acesso restrito ao administrador autorizado.
               </p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-4">
-              <div>
+              <div className="space-y-3">
+                <input
+                  type="email"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  placeholder="E-mail do administrador"
+                  autoComplete="username"
+                  className="w-full px-4 py-3 rounded-2xl bg-zinc-900 border border-zinc-800 text-center text-sm text-white focus:outline-none focus:border-amber-500 placeholder-zinc-600"
+                  autoFocus
+                />
                 <input
                   type="password"
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
-                  placeholder="Digite a senha..."
+                  placeholder="Senha do Supabase"
+                  autoComplete="current-password"
                   className="w-full px-4 py-3 rounded-2xl bg-zinc-900 border border-zinc-800 text-center text-sm text-white focus:outline-none focus:border-amber-500 placeholder-zinc-600"
-                  autoFocus
                 />
-                {authError && (
-                  <p className="text-xs text-red-400 mt-2 font-medium">{authError}</p>
-                )}
+                {authError && <p className="text-xs text-red-400 mt-2 font-medium">{authError}</p>}
               </div>
 
               <button
@@ -717,19 +740,6 @@ export const AdminModal: React.FC = () => {
                     </button>
                   </div>
 
-                  {/* Trocar Senha */}
-                  <div className="space-y-1 pt-2 border-t border-zinc-800">
-                    <label className="text-xs font-bold text-zinc-300 uppercase">
-                      Alterar Senha do Admin (Opcional)
-                    </label>
-                    <input
-                      type="password"
-                      value={newAdminPassword}
-                      onChange={(e) => setNewAdminPassword(e.target.value)}
-                      placeholder="Deixe em branco para manter a atual"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-white focus:border-amber-500 focus:outline-none placeholder-zinc-600 min-h-[42px]"
-                    />
-                  </div>
                 </div>
               )}
             </div>
