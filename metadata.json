@@ -1,0 +1,6 @@
+{
+  "name": "MGW X-SALADA — CARDÁPIO DIGITAL",
+  "description": "Cardápio digital moderno e interativo da hamburgueria MGW X-SALADA. Faça seu pedido de X-Saladas tradicionais e combos com Guaraná Tuchaua direto pelo WhatsApp.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
