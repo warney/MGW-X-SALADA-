@@ -1,7 +1,7 @@
 # Decisões propostas do catálogo SaaS (MVP)
 
-**Status: proposta técnica para validação.**  
-Este documento fecha uma proposta coerente para o MVP, mas não autoriza migration, alteração de banco ou mudança no cardápio publicado.
+**Status: APROVADO pelo responsável em 2026-11-06.**  
+As decisões abaixo foram aprovadas pelo responsável. Esta aprovação valida o modelo de catálogo e o slug MGW, mas não autoriza migration, alteração de banco ou mudança no cardápio publicado.
 
 ## Decisões recomendadas
 
