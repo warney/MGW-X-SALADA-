@@ -9,8 +9,8 @@ interface StoreContextType {
   cart: CartItem[];
   cartCount: number;
   cartTotal: number;
-  activeCategory: 'all' | 'individual' | 'combo';
-  setActiveCategory: (cat: 'all' | 'individual' | 'combo') => void;
+  activeCategory: string;
+  setActiveCategory: (cat: string) => void;
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
   isCheckoutOpen: boolean;
@@ -75,7 +75,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try { const saved = localStorage.getItem(STORAGE_KEYS.CART); return saved ? JSON.parse(saved) : []; }
     catch { return []; }
   });
-  const [activeCategory, setActiveCategory] = useState<'all' | 'individual' | 'combo'>('all');
+  const [activeCategory, setActiveCategory] = useState<string>('all');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
