@@ -21,7 +21,7 @@ export function resolveAuthIdentity(
   const userId = user?.id?.trim();
   if (!userId) return null;
 
-  const email = user.email?.trim().toLowerCase() || null;
+  const email = user?.email?.trim().toLowerCase() || null;
 
   return { userId, email };
 }
