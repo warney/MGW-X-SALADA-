@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import type { StoreCategory, StoreId } from '../types/saas';
+import { normalizeCatalogPage } from './catalogPagination';
 
 export type CatalogProductType = 'individual' | 'combo';
 
@@ -55,16 +56,6 @@ export interface CatalogPage<T> {
   page: number;
   pageSize: number;
   total: number;
-}
-
-const DEFAULT_PAGE_SIZE = 20;
-const MAX_PAGE_SIZE = 100;
-
-export function normalizeCatalogPage(options: CatalogPageOptions = {}) {
-  const page = Number.isInteger(options.page) && (options.page ?? 0) > 0 ? options.page! : 1;
-  const requestedSize = Number.isInteger(options.pageSize) ? options.pageSize! : DEFAULT_PAGE_SIZE;
-  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, requestedSize));
-  return { page, pageSize, from: (page - 1) * pageSize, to: page * pageSize - 1 };
 }
 
 function requiredText(value: string, field: string): string {
