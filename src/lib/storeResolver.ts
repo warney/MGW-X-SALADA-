@@ -49,7 +49,13 @@ export function resolveStore(
 
   const pathMatch = options.pathname?.match(/^\/s\/([^/]+)(?:\/|$)/i);
   if (pathMatch) {
-    const store = findBySlug(decodeURIComponent(pathMatch[1]));
+    let decodedSlug: string;
+    try {
+      decodedSlug = decodeURIComponent(pathMatch[1]);
+    } catch {
+      return { store: null, source: null };
+    }
+    const store = findBySlug(decodedSlug);
     return { store, source: store ? 'path' : null };
   }
 
