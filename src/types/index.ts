@@ -47,5 +47,4 @@ export interface StoreConfig {
   deliveryEstimate: string;
   deliveryFeeNote: string;
   isOpen: boolean;
-  adminPassword: string;
 }
