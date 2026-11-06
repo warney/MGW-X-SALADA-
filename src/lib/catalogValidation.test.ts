@@ -37,7 +37,7 @@ test('normalizes category name and slug', () => {
 });
 
 test('rejects invalid category slugs', () => {
-  for (const slug of [' Bebidas', 'bebidas quentes', '-bebidas', 'bebidas-']) {
+  for (const slug of ['bebidas quentes', 'bebidas/quentes', '-bebidas', 'bebidas-']) {
     assert.throws(() => validateCatalogCategory({ name: 'Bebidas', slug }), /Identificador inválido/);
   }
 });
