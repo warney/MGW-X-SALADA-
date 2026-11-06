@@ -9,7 +9,7 @@ Este checklist será preenchido antes de transformar o rascunho em migration for
 | Item | Estado | Evidência necessária |
 |---|---|---|
 | Slug MGW `mgw-x-salada` | **Aprovado em 2026-11-06** | Confirmação explícita nesta conversa |
-| UUID Auth do owner inicial | Pendente | UUID copiado do usuário correto em Supabase Auth > Users |
+| UUID Auth do owner inicial | **Confirmado por consulta somente leitura em 2026-11-06** | Conta `warney.fernandes22@gmail.com` localizada, confirmada e não banida; UUID será usado somente no bootstrap autorizado |
 | Decisões do catálogo | **Aprovadas em 2026-11-06** | Confirmação explícita nesta conversa; ver `SAAS-CATALOG-MVP-DECISIONS.md` |
 | Backup dos dados | Parcial | Backup manual existente; não equivale a dump integral do PostgreSQL |
 | Rollback | Pendente | Procedimento testado em ambiente isolado |
@@ -23,7 +23,7 @@ Este checklist será preenchido antes de transformar o rascunho em migration for
 4. Copiar o campo **ID/UUID** exibido para aquela conta.
 5. Conferir que a conta está ativa e que o UUID pertence ao usuário esperado.
 
-O UUID deve ser fornecido diretamente como identificador técnico. Não compartilhar senha, access token, refresh token, chave API ou chave `service_role`. E-mail isoladamente nunca será usado como autorização.
+A conta proprietária inicial foi localizada diretamente em `auth.users` por consulta somente leitura; não foi necessário compartilhar o UUID no chat. O e-mail identifica a conta a conferir, mas a autorização técnica será vinculada ao UUID do Auth. **A senha não será solicitada, armazenada no repositório nem inserida em SQL ou código.** Nunca compartilhar access token, refresh token, chave API ou chave `service_role`.
 
 ## B. Inspeção somente leitura do banco
 
