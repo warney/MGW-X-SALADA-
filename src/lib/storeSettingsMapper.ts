@@ -21,7 +21,7 @@ function optionalString(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
 
-/** Converte uma linha de public.store_settings para configurações de domínio. */
+/** Converte uma linha de public.store_settings sem materializar campos opcionais ausentes. */
 export function mapStoreSettingsRow(value: unknown): MappedStoreSettings | null {
   const row = asRow(value);
   if (!row) return null;
@@ -31,20 +31,28 @@ export function mapStoreSettingsRow(value: unknown): MappedStoreSettings | null 
 
   if (!storeId || !storeName || typeof row.is_open !== 'boolean') return null;
 
-  return {
-    storeId,
-    settings: {
-      storeName,
-      slogan: optionalString(row.slogan),
-      logoUrl: optionalString(row.logo_url),
-      primaryColor: optionalString(row.primary_color),
-      secondaryColor: optionalString(row.secondary_color),
-      whatsappNumber: optionalString(row.whatsapp_number),
-      address: optionalString(row.address),
-      openingHours: optionalString(row.opening_hours),
-      deliveryEstimate: optionalString(row.delivery_estimate),
-      deliveryFeeNote: optionalString(row.delivery_fee_note),
-      isOpen: row.is_open,
-    },
+  const settings: StorePublicSettings = {
+    storeName,
+    isOpen: row.is_open,
   };
+
+  const optionalFields = {
+    slogan: optionalString(row.slogan),
+    logoUrl: optionalString(row.logo_url),
+    primaryColor: optionalString(row.primary_color),
+    secondaryColor: optionalString(row.secondary_color),
+    whatsappNumber: optionalString(row.whatsapp_number),
+    address: optionalString(row.address),
+    openingHours: optionalString(row.opening_hours),
+    deliveryEstimate: optionalString(row.delivery_estimate),
+    deliveryFeeNote: optionalString(row.delivery_fee_note),
+  };
+
+  for (const [key, fieldValue] of Object.entries(optionalFields)) {
+    if (fieldValue !== undefined) {
+      Object.assign(settings, { [key]: fieldValue });
+    }
+  }
+
+  return { storeId, settings };
 }
