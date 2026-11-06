@@ -1,8 +1,10 @@
 import { supabase } from './supabase';
 import type { StoreCategory, StoreId } from '../types/saas';
 import { normalizeCatalogPage } from './catalogPagination';
+import { validateCatalogProduct, validateCatalogCategory } from './catalogValidation';
+import type { CatalogProductInput, CatalogCategoryInput, CatalogProductType } from './catalogTypes';
 
-export type CatalogProductType = 'individual' | 'combo';
+
 
 export interface CatalogProduct {
   id: string;
@@ -21,27 +23,6 @@ export interface CatalogProduct {
   updatedAt: string;
 }
 
-export interface CatalogProductInput {
-  name: string;
-  productType: CatalogProductType;
-  categoryId?: string | null;
-  description?: string;
-  price: number;
-  imageUrl?: string | null;
-  active?: boolean;
-  highlight?: string | null;
-  includedItems?: string[];
-  sortOrder?: number;
-}
-
-export interface CatalogCategoryInput {
-  name: string;
-  slug: string;
-  description?: string;
-  active?: boolean;
-  sortOrder?: number;
-}
-
 export interface CatalogPageOptions {
   page?: number;
   pageSize?: number;
@@ -56,26 +37,6 @@ export interface CatalogPage<T> {
   page: number;
   pageSize: number;
   total: number;
-}
-
-function requiredText(value: string, field: string): string {
-  const normalized = value.trim();
-  if (!normalized) throw new Error(`${field} é obrigatório.`);
-  return normalized;
-}
-
-function validateProduct(input: CatalogProductInput): CatalogProductInput {
-  const name = requiredText(input.name, 'Nome do produto');
-  if (!Number.isFinite(input.price) || input.price < 0) {
-    throw new Error('O preço deve ser um número válido maior ou igual a zero.');
-  }
-  if (input.productType !== 'individual' && input.productType !== 'combo') {
-    throw new Error('Tipo de produto inválido.');
-  }
-  if (input.productType === 'individual' && (input.includedItems?.length ?? 0) > 0) {
-    throw new Error('Itens incluídos só podem ser informados para combos.');
-  }
-  return { ...input, name, categoryId: input.categoryId?.trim() || null };
 }
 
 function mapProduct(row: any): CatalogProduct {
@@ -144,7 +105,7 @@ export const catalogRepository = {
 
   async saveProduct(storeId: StoreId, input: CatalogProductInput, productId?: string): Promise<CatalogProduct> {
     if (!storeId?.trim()) throw new Error('Selecione uma loja antes de salvar.');
-    const valid = validateProduct(input);
+    const valid = validateCatalogProduct(input);
     const payload = {
       store_id: storeId,
       name: valid.name,
@@ -185,9 +146,7 @@ export const catalogRepository = {
 
   async saveCategory(storeId: StoreId, input: CatalogCategoryInput, categoryId?: string): Promise<StoreCategory> {
     if (!storeId?.trim()) throw new Error('Selecione uma loja antes de salvar.');
-    const name = requiredText(input.name, 'Nome da categoria');
-    const slug = requiredText(input.slug, 'Identificador da categoria').toLowerCase();
-    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error('Identificador inválido; use letras minúsculas, números e hífens.');
+    const { name, slug } = validateCatalogCategory(input);
     const payload = { store_id: storeId, name, slug, description: input.description?.trim() || null,
       active: input.active ?? true, sort_order: input.sortOrder ?? 0 };
     const result = categoryId
