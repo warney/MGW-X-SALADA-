@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import type { Store, StoreSlug } from '../types/saas';
-import { resolveStore, type StoreResolutionSource } from '../lib/storeResolver';
+import { normalizeStoreSlug, resolveStore, type StoreResolutionSource } from '../lib/storeResolver';
 
 interface StoreIdentityContextValue {
   /** Slug identificado pela URL ou pelo fallback legado explícito. */
@@ -15,7 +15,11 @@ const StoreIdentityContext = createContext<StoreIdentityContextValue | undefined
 
 interface StoreIdentityProviderProps {
   children: React.ReactNode;
-  /** Lista opcional, ainda não conectada ao Supabase nesta etapa. */
+  /**
+   * Quando omitida, o slug é apenas uma referência provisória de URL.
+   * Quando informada (inclusive como []), funciona como registro autoritativo:
+   * slugs desconhecidos não são aceitos como identidade de loja.
+   */
   stores?: readonly Store[];
   fallbackSlug?: StoreSlug;
   hostToSlug?: Readonly<Record<string, StoreSlug>>;
@@ -23,34 +27,53 @@ interface StoreIdentityProviderProps {
 
 export const StoreIdentityProvider: React.FC<StoreIdentityProviderProps> = ({
   children,
-  stores = [],
+  stores,
   fallbackSlug,
   hostToSlug,
 }) => {
   const value = useMemo(() => {
     const pathname = window.location.pathname;
-    const hostname = window.location.hostname;
+    const hostname = window.location.hostname.toLowerCase();
     const pathMatch = pathname.match(/^\/s\/([^/]+)(?:\/|$)/i);
-    const hostSlug = hostToSlug?.[hostname.toLowerCase()];
-    const requestedSlug = pathMatch
-      ? decodeURIComponent(pathMatch[1])
-      : hostSlug || fallbackSlug || null;
 
-    const resolution = resolveStore(stores, {
+    let pathSlug: string | null = null;
+    if (pathMatch) {
+      try {
+        pathSlug = normalizeStoreSlug(decodeURIComponent(pathMatch[1])) || null;
+      } catch {
+        pathSlug = null;
+      }
+    }
+
+    const hostSlug = hostToSlug?.[hostname] ?? null;
+    const candidateSlug = pathMatch
+      ? pathSlug
+      : hostSlug || (fallbackSlug ? normalizeStoreSlug(fallbackSlug) : null);
+
+    const resolution = resolveStore(stores ?? [], {
       pathname,
       hostname,
       hostToSlug,
       fallbackSlug,
     });
 
+    // Com registro fornecido, só aceitamos lojas efetivamente encontradas.
+    // Sem registro, preservamos a referência provisória usada na transição.
+    const storeSlug = stores === undefined
+      ? candidateSlug
+      : resolution.store?.slug ?? null;
+
+    const source: StoreResolutionSource | null = stores === undefined
+      ? candidateSlug
+        ? pathMatch ? 'path' : hostSlug ? 'host' : fallbackSlug ? 'fallback' : null
+        : null
+      : resolution.source;
+
     return {
-      storeSlug: requestedSlug,
+      storeSlug,
       store: resolution.store,
-      source: pathMatch ? 'path' as const
-        : hostSlug ? 'host' as const
-        : fallbackSlug ? 'fallback' as const
-        : null,
-      isExplicitSelection: Boolean(pathMatch || hostSlug),
+      source,
+      isExplicitSelection: Boolean(pathMatch || hostSlug) && Boolean(storeSlug),
     };
   }, [stores, fallbackSlug, hostToSlug]);
 
