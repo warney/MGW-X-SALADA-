@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeCatalogPage } from './catalogRepository';
+import { normalizeCatalogPage } from './catalogPagination';
 
 test('uses safe defaults for catalog pagination', () => {
   assert.deepEqual(normalizeCatalogPage(), { page: 1, pageSize: 20, from: 0, to: 19 });
