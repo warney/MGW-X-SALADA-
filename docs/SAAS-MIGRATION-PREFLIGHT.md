@@ -8,9 +8,9 @@ Este checklist será preenchido antes de transformar o rascunho em migration for
 
 | Item | Estado | Evidência necessária |
 |---|---|---|
-| Slug MGW `mgw-x-salada` | Pendente | Aprovação explícita do responsável |
+| Slug MGW `mgw-x-salada` | **Aprovado em 2026-11-06** | Confirmação explícita nesta conversa |
 | UUID Auth do owner inicial | Pendente | UUID copiado do usuário correto em Supabase Auth > Users |
-| Decisões do catálogo | Proposta documentada | Aprovação explícita do modelo MVP |
+| Decisões do catálogo | **Aprovadas em 2026-11-06** | Confirmação explícita nesta conversa; ver `SAAS-CATALOG-MVP-DECISIONS.md` |
 | Backup dos dados | Parcial | Backup manual existente; não equivale a dump integral do PostgreSQL |
 | Rollback | Pendente | Procedimento testado em ambiente isolado |
 | Ambiente de ensaio | Pendente | Confirmar opção sem custo adicional antes de criar qualquer recurso |
