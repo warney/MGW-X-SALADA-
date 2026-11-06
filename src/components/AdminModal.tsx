@@ -26,6 +26,7 @@ import { formatCurrency, cleanPhoneNumber, formatPhoneDisplay } from '../utils/f
 import { processUploadedImage } from '../utils/imageStorage';
 import { OFFICIAL_LOGO_URL } from '../data/defaultData';
 import { supabase, ADMIN_EMAIL } from '../lib/supabase';
+import { resolveAuthIdentity } from '../lib/authIdentity';
 
 interface PreviewModalData {
   productId: string;
@@ -74,8 +75,8 @@ export const AdminModal: React.FC = () => {
   useEffect(() => {
     if (!isAdminOpen) return;
     supabase.auth.getSession().then(({ data }) => {
-      const user = data.session?.user;
-      if (user?.email?.toLowerCase() === ADMIN_EMAIL) setIsAuthenticated(true);
+      const identity = resolveAuthIdentity(data.session?.user);
+      setIsAuthenticated(identity?.email === ADMIN_EMAIL);
     });
   }, [isAdminOpen]);
 
@@ -95,7 +96,8 @@ export const AdminModal: React.FC = () => {
       email: emailInput.trim(),
       password: passwordInput,
     });
-    if (error || data.user?.email?.toLowerCase() !== ADMIN_EMAIL) {
+    const identity = resolveAuthIdentity(data.user);
+    if (error || identity?.email !== ADMIN_EMAIL) {
       setAuthError('Não foi possível entrar. Confira o e-mail e a senha.');
       return;
     }
