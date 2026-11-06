@@ -106,5 +106,4 @@ export const INITIAL_STORE_CONFIG: StoreConfig = {
   deliveryEstimate: '35 - 50 min',
   deliveryFeeNote: 'Taxa de entrega calculada de acordo com o bairro',
   isOpen: true,
-  adminPassword: 'admin'
 };
