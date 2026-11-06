@@ -27,6 +27,9 @@ export const Hero: React.FC = () => {
             <img
               src={HERO_BURGER_IMAGE}
               alt="Hambúrguer artesanal MGW X-Salada"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover object-center opacity-25 sm:opacity-40 scale-105"
             />
@@ -97,6 +100,8 @@ export const Hero: React.FC = () => {
                 <img
                   src={OFFICIAL_LOGO_URL}
                   alt="Logo Oficial MGW X-Salada"
+                  loading="eager"
+                  decoding="async"
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-300"
                 />
