@@ -22,14 +22,20 @@ const superAdmin = (overrides: Partial<PlatformAdmin> = {}): PlatformAdmin => ({
   ...overrides,
 });
 
-test('returns null when no store is selected', () => {
-  assert.equal(resolveStoreAccess(null, [], null), null);
+test('returns null when user or store is not selected', () => {
+  assert.equal(resolveStoreAccess(null, 'store-a', [], null), null);
+  assert.equal(resolveStoreAccess('user-a', null, [], null), null);
 });
 
-test('grants only the active membership role for the selected store', () => {
+test('grants only the active membership belonging to the authenticated user and selected store', () => {
   const access = resolveStoreAccess(
+    'user-a',
     'store-a',
-    [membership(), membership({ id: 'membership-b', storeId: 'store-b', role: 'owner' })],
+    [
+      membership({ userId: 'user-other', role: 'owner' }),
+      membership({ id: 'membership-b', storeId: 'store-b', role: 'owner' }),
+      membership(),
+    ],
     null,
   );
 
@@ -39,24 +45,49 @@ test('grants only the active membership role for the selected store', () => {
   assert.equal(access?.permissions.includes('members.manage'), false);
 });
 
-test('does not grant access from an inactive membership', () => {
-  const access = resolveStoreAccess('store-a', [membership({ active: false })], null);
+test('does not grant access from another user membership', () => {
+  const access = resolveStoreAccess(
+    'user-a',
+    'store-a',
+    [membership({ userId: 'user-b', role: 'owner' })],
+    null,
+  );
 
   assert.equal(access?.role, null);
   assert.equal(access?.canAccessStore, false);
   assert.deepEqual(access?.permissions, []);
 });
 
-test('active platform admin can access a store without membership', () => {
-  const access = resolveStoreAccess('store-a', [], superAdmin());
+test('does not grant access from an inactive membership', () => {
+  const access = resolveStoreAccess('user-a', 'store-a', [membership({ active: false })], null);
+
+  assert.equal(access?.role, null);
+  assert.equal(access?.canAccessStore, false);
+  assert.deepEqual(access?.permissions, []);
+});
+
+test('active platform admin can access a store without membership when user IDs match', () => {
+  const access = resolveStoreAccess('user-root', 'store-a', [], superAdmin());
 
   assert.equal(access?.isPlatformAdmin, true);
   assert.equal(access?.canAccessStore, true);
   assert.deepEqual(access?.permissions, []);
 });
 
+test('does not accept a platform admin record belonging to another user', () => {
+  const access = resolveStoreAccess('user-a', 'store-a', [], superAdmin());
+
+  assert.equal(access?.isPlatformAdmin, false);
+  assert.equal(access?.canAccessStore, false);
+});
+
 test('inactive platform admin does not receive platform access', () => {
-  const access = resolveStoreAccess('store-a', [], superAdmin({ active: false }));
+  const access = resolveStoreAccess(
+    'user-root',
+    'store-a',
+    [],
+    superAdmin({ active: false }),
+  );
 
   assert.equal(access?.isPlatformAdmin, false);
   assert.equal(access?.canAccessStore, false);
