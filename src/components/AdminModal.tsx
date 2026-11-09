@@ -447,6 +447,33 @@ export const AdminModal: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Create product directly in the catalog */}
+                  <form onSubmit={handleCreateProduct} className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <h4 className="text-sm font-bold text-white">Adicionar produto ao cardápio</h4>
+                        <p className="text-xs text-zinc-400">O novo item será salvo no catálogo da MGW.</p>
+                      </div>
+                      <span className="text-[10px] rounded-full px-2 py-1 bg-emerald-500/10 text-emerald-300">Novo produto</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <input value={newProductName} onChange={(e) => setNewProductName(e.target.value)} maxLength={120} required placeholder="Nome do produto" aria-label="Nome do produto" className="w-full rounded-xl bg-zinc-950 border border-zinc-800 px-3 py-3 text-sm text-white min-h-[44px]" />
+                      <input value={newProductPrice} onChange={(e) => setNewProductPrice(e.target.value)} required inputMode="decimal" placeholder="Preço (ex.: 19,90)" aria-label="Preço do produto" className="w-full rounded-xl bg-zinc-950 border border-zinc-800 px-3 py-3 text-sm text-white min-h-[44px]" />
+                    </div>
+                    <textarea value={newProductDescription} onChange={(e) => setNewProductDescription(e.target.value)} maxLength={1000} rows={2} placeholder="Descrição do produto (opcional)" aria-label="Descrição do produto" className="w-full rounded-xl bg-zinc-950 border border-zinc-800 px-3 py-3 text-sm text-white" />
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <select value={newProductType} onChange={(e) => setNewProductType(e.target.value as 'individual' | 'combo')} aria-label="Tipo do produto" className="flex-1 rounded-xl bg-zinc-950 border border-zinc-800 px-3 py-3 text-sm text-white min-h-[44px]">
+                        <option value="individual">Produto individual</option>
+                        <option value="combo">Combo</option>
+                      </select>
+                      <button type="submit" disabled={isCreatingProduct} className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold text-xs uppercase min-h-[44px]">
+                        {isCreatingProduct ? 'Salvando...' : 'Cadastrar produto'}
+                      </button>
+                    </div>
+                    {productCreateError && <p role="alert" className="text-xs text-red-300">{productCreateError}</p>}
+                  </form>
+                  {imageSuccess && <p role="status" className="text-xs text-emerald-300">{imageSuccess}</p>}
+
                   {/* Product search for growing catalogs */}
                   <div className="relative">
                     <input
