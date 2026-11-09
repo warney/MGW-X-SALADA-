@@ -549,6 +549,18 @@ export const AdminModal: React.FC = () => {
                               )}
                             </div>
                           </div>
+                          <div className="flex items-center justify-between gap-3 border-t border-zinc-800 pt-3">
+                            <span className={`text-[11px] font-bold uppercase tracking-wide ${product.active ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                              {product.active ? 'Visível no cardápio' : 'Produto oculto'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => updateProduct(product.id, { active: !product.active })}
+                              className={`px-3 py-2 rounded-lg text-[11px] font-bold transition-colors min-h-[40px] ${product.active ? 'bg-red-950/50 text-red-300 border border-red-800/60 hover:bg-red-900/60' : 'bg-emerald-950/50 text-emerald-300 border border-emerald-800/60 hover:bg-emerald-900/60'}`}
+                            >
+                              {product.active ? 'Ocultar produto' : 'Reativar produto'}
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
