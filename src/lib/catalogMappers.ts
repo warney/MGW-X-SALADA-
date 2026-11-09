@@ -1,5 +1,5 @@
 import type { StoreCategory } from '../types/saas';
-import type { CatalogProduct, } from './catalogRepository';
+import type { CatalogProduct } from './catalogTypes';
 import type { CatalogProductType } from './catalogTypes';
 
 type Row = Record<string, unknown>;
