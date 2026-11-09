@@ -16,6 +16,7 @@ import { AdminModal } from './components/AdminModal';
 import { Footer } from './components/Footer';
 import { Utensils, Sparkles, Layers, AlertCircle } from 'lucide-react';
 import { cleanPhoneNumber } from './utils/formatters';
+import { useStoreIdentity } from './context/StoreIdentityContext';
 
 const CATEGORY_PRESENTATION: Record<string, { title: string; description: string; icon: React.ElementType; iconClass: string }> = {
   individual: {
@@ -39,6 +40,18 @@ const formatCategoryName = (category: string) =>
 
 const MenuContent: React.FC = () => {
   const { products, activeCategory, config, setIsAdminOpen } = useStore();
+  const { storeSlug } = useStoreIdentity();
+
+  if (storeSlug !== 'mgw-x-salada') {
+    return (
+      <main className="min-h-screen bg-[#050505] text-zinc-100 flex items-center justify-center px-6">
+        <section className="max-w-md text-center space-y-3">
+          <h1 className="text-2xl font-bold">Cardápio não disponível</h1>
+          <p className="text-sm text-zinc-400">Esta loja ainda não foi ativada. Confira o endereço ou tente novamente mais tarde.</p>
+        </section>
+      </main>
+    );
+  }
   const isStoreNumberSet = !!cleanPhoneNumber(config.whatsappNumber);
   const activeProducts = products.filter((product) => product.active);
   const categories = Array.from(new Set(activeProducts.map((product) => product.category)));
