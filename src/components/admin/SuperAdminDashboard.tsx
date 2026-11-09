@@ -23,7 +23,7 @@ interface SuperAdminDashboardProps {
 }
 
 export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSelectStoreToManage }) => {
-  const { stores, refreshStores, navigateToStore } = useStoreIdentity();
+  const { stores, refreshStores, navigateToStore, user } = useStoreIdentity();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | StoreStatus>('all');
   const [isCreatingModalOpen, setIsCreatingModalOpen] = useState(false);
@@ -60,7 +60,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSele
           slug: newStoreSlug || undefined,
           status: newStoreStatus,
         },
-        '9ea5631d-5045-480b-bd77-8d2ca50c6222'
+        user?.id ?? ''
       );
 
       setCreateSuccess(`Estabelecimento "${created.name}" cadastrado com sucesso!`);
