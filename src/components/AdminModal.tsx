@@ -63,6 +63,7 @@ export const AdminModal: React.FC = () => {
   const [newProductType, setNewProductType] = useState<'individual' | 'combo'>('individual');
   const [productCreateError, setProductCreateError] = useState('');
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
 
   // Form local states for editing
   const [tempWhatsapp, setTempWhatsapp] = useState(config.whatsappNumber);
@@ -446,9 +447,27 @@ export const AdminModal: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Product search for growing catalogs */}
+                  <div className="relative">
+                    <input
+                      type="search"
+                      value={productSearch}
+                      onChange={(event) => setProductSearch(event.target.value)}
+                      placeholder="Buscar produto pelo nome ou descrição..."
+                      aria-label="Buscar produtos"
+                      className="w-full rounded-xl bg-zinc-950 border border-zinc-800 px-4 py-3 text-sm text-white placeholder:text-zinc-500 focus:border-amber-500 focus:outline-none min-h-[44px]"
+                    />
+                  </div>
+
                   {/* List of Products for Image Management */}
                   <div className="space-y-4">
-                    {products.map((product) => {
+                    {products
+                      .filter((product) => {
+                        const query = productSearch.trim().toLocaleLowerCase('pt-BR');
+                        return !query || product.name.toLocaleLowerCase('pt-BR').includes(query)
+                          || product.description.toLocaleLowerCase('pt-BR').includes(query);
+                      })
+                      .map((product) => {
                       const isDefaultLogo = product.imageUrl === OFFICIAL_LOGO_URL;
 
                       return (
