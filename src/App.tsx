@@ -153,9 +153,16 @@ const MenuContent: React.FC = () => {
   );
 };
 
+/**
+ * Remonta todo o estado do estabelecimento quando o slug muda.
+ * Isso impede que produtos, configurações e carrinho da loja anterior
+ * permaneçam em memória durante uma navegação entre lojas.
+ */
 export default function App() {
+  const { storeSlug } = useStoreIdentity();
+
   return (
-    <StoreProvider>
+    <StoreProvider key={storeSlug ?? 'unknown-store'}>
       <MenuContent />
     </StoreProvider>
   );
