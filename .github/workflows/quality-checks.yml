@@ -3,6 +3,7 @@ name: Quality checks
 on:
   push:
     branches:
+      - main
       - development/saas-foundation
   pull_request:
     branches:
