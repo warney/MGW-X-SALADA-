@@ -621,9 +621,33 @@ export const AdminModal: React.FC = () => {
                                   {product.category === 'individual' ? 'Individual' : 'Combo'}
                                 </span>
                               </div>
-                              <p className="text-xs text-zinc-400 truncate max-w-xs sm:max-w-md">
-                                {product.description}
-                              </p>
+                              <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+                                <input
+                                  type="text"
+                                  aria-label={`Nome do produto ${product.name}`}
+                                  defaultValue={product.name}
+                                  maxLength={80}
+                                  onBlur={(e) => {
+                                    const name = e.target.value.trim();
+                                    if (name && name !== product.name) updateProduct(product.id, { name });
+                                    else e.target.value = product.name;
+                                  }}
+                                  className="w-full min-w-0 px-2 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-white focus:outline-none focus:border-amber-500"
+                                  placeholder="Nome do produto"
+                                />
+                                <input
+                                  type="text"
+                                  aria-label={`Descrição do produto ${product.name}`}
+                                  defaultValue={product.description}
+                                  maxLength={240}
+                                  onBlur={(e) => {
+                                    const description = e.target.value.trim();
+                                    if (description !== product.description) updateProduct(product.id, { description });
+                                  }}
+                                  className="w-full min-w-0 px-2 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 focus:outline-none focus:border-amber-500"
+                                  placeholder="Descrição do produto"
+                                />
+                              </div>
                             </div>
                           </div>
 
