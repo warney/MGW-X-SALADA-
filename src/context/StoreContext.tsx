@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { Product, CartItem, StoreConfig } from '../types';
 import { INITIAL_PRODUCTS, INITIAL_STORE_CONFIG, OFFICIAL_LOGO_URL } from '../data/defaultData';
 import { supabase, PRODUCT_IMAGE_BUCKET } from '../lib/supabase';
+import { useStoreIdentity } from './StoreIdentityContext';
 
 interface StoreContextType {
   products: Product[];
@@ -30,7 +31,11 @@ interface StoreContextType {
   refreshMenuFromServer: () => Promise<void>;
 }
 
-const STORAGE_KEYS = { PRODUCTS: 'mgw_products_v2', CONFIG: 'mgw_config_v2', CART: 'mgw_cart_v1' };
+const LEGACY_STORE_SLUG = 'mgw-x-salada';
+const legacyStorageKeys = { PRODUCTS: 'mgw_products_v2', CONFIG: 'mgw_config_v2', CART: 'mgw_cart_v1' };
+const getStorageKeys = (slug: string | null) => slug === LEGACY_STORE_SLUG
+  ? legacyStorageKeys
+  : { PRODUCTS: `store_${slug ?? 'unknown'}_products_v1`, CONFIG: `store_${slug ?? 'unknown'}_config_v1`, CART: `store_${slug ?? 'unknown'}_cart_v1` };
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 const toProduct = (row: any): Product => ({
@@ -63,16 +68,19 @@ const toConfigRow = (c: StoreConfig) => ({
 });
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { storeSlug } = useStoreIdentity();
+  const isLegacyStore = storeSlug === LEGACY_STORE_SLUG;
+  const storageKeys = getStorageKeys(storeSlug);
   const [products, setProducts] = useState<Product[]>(() => {
-    try { const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS); return saved ? JSON.parse(saved) : INITIAL_PRODUCTS; }
-    catch { return INITIAL_PRODUCTS; }
+    try { const saved = localStorage.getItem(storageKeys.PRODUCTS); return saved ? JSON.parse(saved) : (isLegacyStore ? INITIAL_PRODUCTS : []); }
+    catch { return isLegacyStore ? INITIAL_PRODUCTS : []; }
   });
   const [config, setConfig] = useState<StoreConfig>(() => {
-    try { const saved = localStorage.getItem(STORAGE_KEYS.CONFIG); return saved ? { ...INITIAL_STORE_CONFIG, ...JSON.parse(saved) } : INITIAL_STORE_CONFIG; }
+    try { const saved = localStorage.getItem(storageKeys.CONFIG); return saved ? { ...INITIAL_STORE_CONFIG, ...JSON.parse(saved) } : (isLegacyStore ? INITIAL_STORE_CONFIG : { ...INITIAL_STORE_CONFIG, storeName: 'Cardápio indisponível', whatsappNumber: '' }); }
     catch { return INITIAL_STORE_CONFIG; }
   });
   const [cart, setCart] = useState<CartItem[]>(() => {
-    try { const saved = localStorage.getItem(STORAGE_KEYS.CART); return saved ? JSON.parse(saved) : []; }
+    try { const saved = localStorage.getItem(storageKeys.CART); return saved ? JSON.parse(saved) : []; }
     catch { return []; }
   });
   const [activeCategory, setActiveCategory] = useState<string>('all');
@@ -81,6 +89,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isAdminOpen, setIsAdminOpen] = useState(false);
 
   const refreshMenuFromServer = useCallback(async () => {
+    if (!isLegacyStore) return;
     const [{ data: productRows, error: productsError }, { data: settingsRow, error: settingsError }] = await Promise.all([
       supabase.from('store_products').select('*').order('id'),
       supabase.from('store_settings').select('*').eq('id', 1).maybeSingle(),
@@ -90,14 +99,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (productRows?.length) {
       const next = productRows.map(toProduct);
       setProducts(next);
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(next));
+      localStorage.setItem(storageKeys.PRODUCTS, JSON.stringify(next));
     }
     if (settingsRow) {
       const next = toConfig(settingsRow);
       setConfig(next);
-      localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(next));
+      localStorage.setItem(storageKeys.CONFIG, JSON.stringify(next));
     }
-  }, []);
+  }, [isLegacyStore, storageKeys.PRODUCTS, storageKeys.CONFIG]);
 
   useEffect(() => {
     refreshMenuFromServer().catch((err) => console.error('Falha ao carregar cardápio do Supabase:', err));
@@ -106,9 +115,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => window.removeEventListener('focus', onFocus);
   }, [refreshMenuFromServer]);
 
-  useEffect(() => { localStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(cart)); }, [cart]);
-  useEffect(() => { localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products)); }, [products]);
-  useEffect(() => { localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(config)); }, [config]);
+  useEffect(() => { localStorage.setItem(storageKeys.CART, JSON.stringify(cart)); }, [cart, storageKeys.CART]);
+  useEffect(() => { localStorage.setItem(storageKeys.PRODUCTS, JSON.stringify(products)); }, [products, storageKeys.PRODUCTS]);
+  useEffect(() => { localStorage.setItem(storageKeys.CONFIG, JSON.stringify(config)); }, [config, storageKeys.CONFIG]);
 
   const addToCart = (product: Product, quantity = 1, notes = '') => setCart((prev) => {
     const clean = notes.trim();
@@ -127,11 +136,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const next = { ...current, ...updates };
     setProducts((prev) => prev.map((p) => p.id === id ? next : p));
     setCart((prev) => prev.map((i) => i.productId === id ? { ...i, product: { ...i.product, ...updates } } : i));
+    if (!isLegacyStore) return;
     supabase.from('store_products').upsert(toProductRow(next), { onConflict: 'id' })
       .then(({ error }) => { if (error) console.error('Erro ao salvar produto no Supabase:', error); });
   };
 
   const setProductImage = async (id: string, dataUrl: string) => {
+    if (!isLegacyStore) throw new Error('Esta loja ainda não está conectada ao banco multi-loja.');
     const product = products.find((p) => p.id === id);
     if (!product) throw new Error('Produto não encontrado.');
     const response = await fetch(dataUrl);
@@ -153,6 +164,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const deleteProductImage = async (id: string) => {
+    if (!isLegacyStore) throw new Error('Esta loja ainda não está conectada ao banco multi-loja.');
     const product = products.find((p) => p.id === id);
     if (!product) throw new Error('Produto não encontrado.');
     const oldUrl = product.imageUrl;
@@ -172,11 +184,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const updateConfig = (updates: Partial<StoreConfig>) => {
     const next = { ...config, ...updates };
     setConfig(next);
+    if (!isLegacyStore) return;
     supabase.from('store_settings').upsert(toConfigRow(next), { onConflict: 'id' })
       .then(({ error }) => { if (error) console.error('Erro ao salvar configurações no Supabase:', error); });
   };
 
   const resetToDefaults = () => {
+    if (!isLegacyStore) return;
     setProducts(INITIAL_PRODUCTS);
     setConfig(INITIAL_STORE_CONFIG);
     Promise.all([
