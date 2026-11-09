@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL;
+const supabasePublishableKey = import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 if (!supabaseUrl || !supabasePublishableKey) {
   console.error('Supabase não configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY.');
@@ -20,4 +20,6 @@ export const supabase = createClient(
 );
 
 export const ADMIN_EMAIL = 'warney.fernandes22@gmail.com';
+export const SUPER_ADMIN_EMAIL = 'warney.fernandes22@gmail.com';
+export const SUPER_ADMIN_UUID = '9ea5631d-5045-480b-bd77-8d2ca50c6222';
 export const PRODUCT_IMAGE_BUCKET = 'product-images';

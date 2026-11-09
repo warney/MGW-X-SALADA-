@@ -52,6 +52,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         <img
           src={product.imageUrl}
           alt={product.name}
+          loading="lazy"
+          decoding="async"
+          fetchPriority="low"
           referrerPolicy="no-referrer"
           className={`w-full h-full transition-transform duration-500 ${
             isDefaultLogo

@@ -1,29 +1,52 @@
 import React from 'react';
-import { ShoppingBag, Lock, Clock } from 'lucide-react';
+import { ShoppingBag, Lock, Clock, ShieldCheck } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { useStoreIdentity } from '../context/StoreIdentityContext';
 import { OFFICIAL_LOGO_URL } from '../data/defaultData';
 import { formatCurrency } from '../utils/formatters';
 
 export const Header: React.FC = () => {
-  const { config, cartCount, cartTotal, setIsCartOpen, setIsAdminOpen } = useStore();
+  const { config, cartCount, cartTotal, setIsCartOpen, setIsAdminOpen, isLegacyStore } = useStore();
+  const { store, isSuperAdmin, navigateToStore } = useStoreIdentity();
+
+  const handleBrandClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigateToStore(store?.slug ?? 'mgw-x-salada');
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/80 w-full">
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand Zone */}
-        <a href="#" className="flex items-center gap-2 sm:gap-3 shrink-0 group">
+        <a
+          href="#"
+          onClick={handleBrandClick}
+          className="flex items-center gap-2 sm:gap-3 shrink-0 group cursor-pointer"
+        >
           <img
             src={OFFICIAL_LOGO_URL}
-            alt="MGW X-Salada Logo"
+            alt={config.storeName || 'Logo'}
             referrerPolicy="no-referrer"
             className="w-9 h-9 sm:w-11 sm:h-11 object-contain drop-shadow-md rounded-full bg-black/40 ring-1 ring-amber-500/30 group-hover:scale-105 transition-transform shrink-0"
           />
           <div className="flex flex-col">
             <span className="font-display font-extrabold text-sm sm:text-base md:text-lg tracking-tight text-white group-hover:text-amber-400 transition-colors leading-none">
-              MGW <span className="text-amber-400">X-SALADA</span>
+              {isLegacyStore ? (
+                <>
+                  MGW <span className="text-amber-400">X-SALADA</span>
+                </>
+              ) : (
+                config.storeName || store?.name || 'CARDÁPIO DIGITAL'
+              )}
             </span>
-            <span className="text-[10px] sm:text-[11px] text-zinc-400 tracking-wide font-medium mt-0.5">
-              CARDÁPIO DIGITAL
+            <span className="text-[10px] sm:text-[11px] text-zinc-400 tracking-wide font-medium mt-0.5 flex items-center gap-1.5">
+              <span>CARDÁPIO DIGITAL</span>
+              {isSuperAdmin && (
+                <span className="inline-flex items-center gap-0.5 text-amber-400/90 text-[9px] font-bold">
+                  <ShieldCheck className="w-3 h-3 text-amber-400" />
+                  <span>SaaS</span>
+                </span>
+              )}
             </span>
           </div>
         </a>

@@ -1,10 +1,10 @@
 import { Product, StoreConfig } from '../types';
 
-export const OFFICIAL_LOGO_URL = '/assets/aistudio/file_000000007d38820eb94512f2855fdde9_ef02d89c.png';
-export const HERO_BURGER_IMAGE = '/src/assets/images/mgw_hero_burger_1793924628211.jpg';
-export const XSALADA_IMAGE = '/src/assets/images/mgw_xsalada_burger_1793924627575.jpg';
-export const COMBO_TUCHAUA_IMAGE = '/src/assets/images/mgw_combo_tuchaua_1793924628366.jpg';
-export const TUCHAUA_DRINK_IMAGE = '/src/assets/images/mgw_tuchaua_guarana_1793924628509.jpg';
+export const OFFICIAL_LOGO_URL = '/optimized/mgw-logo.webp';
+export const HERO_BURGER_IMAGE = '/optimized/mgw-hero.webp';
+export const XSALADA_IMAGE = '/optimized/mgw-xsalada.webp';
+export const COMBO_TUCHAUA_IMAGE = '/optimized/mgw-combo.webp';
+export const TUCHAUA_DRINK_IMAGE = '/optimized/mgw-tuchaua.webp';
 
 export const INITIAL_PRODUCTS: Product[] = [
   {

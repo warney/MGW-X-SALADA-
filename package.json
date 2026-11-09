@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build",
+    "build": "node scripts/optimize-images.mjs && vite build",
     "start": "node server.ts",
     "preview": "vite preview",
-    "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "clean": "rm -rf dist server.js public/optimized",
+    "lint": "tsc --noEmit",
+    "test": "tsx --test src/lib/*.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -23,7 +24,8 @@
     "dotenv": "^17.2.3",
     "motion": "^12.23.24",
     "@supabase/supabase-js": "2.119.0",
-    "tailwindcss": "^4.3.4"
+    "tailwindcss": "^4.3.4",
+    "sharp": "0.34.5"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
