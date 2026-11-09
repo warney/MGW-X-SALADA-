@@ -29,7 +29,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSele
   const [isCreatingModalOpen, setIsCreatingModalOpen] = useState(false);
   const [newStoreName, setNewStoreName] = useState('');
   const [newStoreSlug, setNewStoreSlug] = useState('');
-  const [newStoreStatus, setNewStoreStatus] = useState<StoreStatus>('active');
+  const [newStoreStatus, setNewStoreStatus] = useState<StoreStatus>('draft');
   const [createError, setCreateError] = useState('');
   const [createSuccess, setCreateSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -304,7 +304,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ onSele
                   onChange={(e) => setNewStoreStatus(e.target.value as StoreStatus)}
                   className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500 min-h-[40px]"
                 >
-                  <option value="active">Ativa (Visível imediatamente)</option>
+                  <option value="active" disabled>Ativa (publique após configurar o cardápio)</option>
                   <option value="draft">Rascunho (Em preparação)</option>
                 </select>
               </div>
