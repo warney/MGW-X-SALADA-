@@ -26,6 +26,7 @@ import { formatCurrency, cleanPhoneNumber, formatPhoneDisplay } from '../utils/f
 import { processUploadedImage } from '../utils/imageStorage';
 import { OFFICIAL_LOGO_URL } from '../data/defaultData';
 import { supabase, ADMIN_EMAIL } from '../lib/supabase';
+import { resolveAuthIdentity } from '../lib/authIdentity';
 
 interface PreviewModalData {
   productId: string;
@@ -43,6 +44,7 @@ export const AdminModal: React.FC = () => {
     isAdminOpen,
     setIsAdminOpen,
     updateProduct,
+    addProduct,
     setProductImage,
     deleteProductImage,
     updateConfig,
@@ -55,6 +57,13 @@ export const AdminModal: React.FC = () => {
   const [authError, setAuthError] = useState('');
   const [activeTab, setActiveTab] = useState<'whatsapp' | 'images' | 'prices' | 'store'>('images');
   const [saveFeedback, setSaveFeedback] = useState(false);
+  const [newProductName, setNewProductName] = useState('');
+  const [newProductDescription, setNewProductDescription] = useState('');
+  const [newProductPrice, setNewProductPrice] = useState('');
+  const [newProductType, setNewProductType] = useState<'individual' | 'combo'>('individual');
+  const [productCreateError, setProductCreateError] = useState('');
+  const [isCreatingProduct, setIsCreatingProduct] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
 
   // Form local states for editing
   const [tempWhatsapp, setTempWhatsapp] = useState(config.whatsappNumber);
@@ -74,8 +83,8 @@ export const AdminModal: React.FC = () => {
   useEffect(() => {
     if (!isAdminOpen) return;
     supabase.auth.getSession().then(({ data }) => {
-      const user = data.session?.user;
-      if (user?.email?.toLowerCase() === ADMIN_EMAIL) setIsAuthenticated(true);
+      const identity = resolveAuthIdentity(data.session?.user);
+      setIsAuthenticated(identity?.email === ADMIN_EMAIL);
     });
   }, [isAdminOpen]);
 
@@ -95,7 +104,8 @@ export const AdminModal: React.FC = () => {
       email: emailInput.trim(),
       password: passwordInput,
     });
-    if (error || data.user?.email?.toLowerCase() !== ADMIN_EMAIL) {
+    const identity = resolveAuthIdentity(data.user);
+    if (error || identity?.email !== ADMIN_EMAIL) {
       setAuthError('Não foi possível entrar. Confira o e-mail e a senha.');
       return;
     }
@@ -120,6 +130,32 @@ export const AdminModal: React.FC = () => {
 
     setSaveFeedback(true);
     setTimeout(() => setSaveFeedback(false), 2000);
+  };
+
+  const handleCreateProduct = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setProductCreateError('');
+    const name = newProductName.trim();
+    const description = newProductDescription.trim();
+    const price = Number(newProductPrice.replace(',', '.'));
+    if (!name) { setProductCreateError('Informe o nome do produto.'); return; }
+    if (!Number.isFinite(price) || price < 0) { setProductCreateError('Informe um preço válido.'); return; }
+    const product: Product = {
+      id: `product-${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`}`,
+      name, description, price, category: newProductType, imageUrl: OFFICIAL_LOGO_URL,
+      active: true, includedItems: [],
+    };
+    setIsCreatingProduct(true);
+    try {
+      await addProduct(product);
+      setNewProductName('');
+      setNewProductDescription('');
+      setNewProductPrice('');
+      setNewProductType('individual');
+      setImageSuccess(`Produto "${name}" cadastrado com sucesso.`);
+    } catch (err: unknown) {
+      setProductCreateError(err instanceof Error ? err.message : 'Não foi possível cadastrar o produto.');
+    } finally { setIsCreatingProduct(false); }
   };
 
   const handlePriceChange = (productId: string, newPriceStr: string) => {
@@ -411,9 +447,54 @@ export const AdminModal: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Create product directly in the catalog */}
+                  <form onSubmit={handleCreateProduct} className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <h4 className="text-sm font-bold text-white">Adicionar produto ao cardápio</h4>
+                        <p className="text-xs text-zinc-400">O novo item será salvo no catálogo da MGW.</p>
+                      </div>
+                      <span className="text-[10px] rounded-full px-2 py-1 bg-emerald-500/10 text-emerald-300">Novo produto</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <input value={newProductName} onChange={(e) => setNewProductName(e.target.value)} maxLength={120} required placeholder="Nome do produto" aria-label="Nome do produto" className="w-full rounded-xl bg-zinc-950 border border-zinc-800 px-3 py-3 text-sm text-white min-h-[44px]" />
+                      <input value={newProductPrice} onChange={(e) => setNewProductPrice(e.target.value)} required inputMode="decimal" placeholder="Preço (ex.: 19,90)" aria-label="Preço do produto" className="w-full rounded-xl bg-zinc-950 border border-zinc-800 px-3 py-3 text-sm text-white min-h-[44px]" />
+                    </div>
+                    <textarea value={newProductDescription} onChange={(e) => setNewProductDescription(e.target.value)} maxLength={1000} rows={2} placeholder="Descrição do produto (opcional)" aria-label="Descrição do produto" className="w-full rounded-xl bg-zinc-950 border border-zinc-800 px-3 py-3 text-sm text-white" />
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <select value={newProductType} onChange={(e) => setNewProductType(e.target.value as 'individual' | 'combo')} aria-label="Tipo do produto" className="flex-1 rounded-xl bg-zinc-950 border border-zinc-800 px-3 py-3 text-sm text-white min-h-[44px]">
+                        <option value="individual">Produto individual</option>
+                        <option value="combo">Combo</option>
+                      </select>
+                      <button type="submit" disabled={isCreatingProduct} className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold text-xs uppercase min-h-[44px]">
+                        {isCreatingProduct ? 'Salvando...' : 'Cadastrar produto'}
+                      </button>
+                    </div>
+                    {productCreateError && <p role="alert" className="text-xs text-red-300">{productCreateError}</p>}
+                  </form>
+                  {imageSuccess && <p role="status" className="text-xs text-emerald-300">{imageSuccess}</p>}
+
+                  {/* Product search for growing catalogs */}
+                  <div className="relative">
+                    <input
+                      type="search"
+                      value={productSearch}
+                      onChange={(event) => setProductSearch(event.target.value)}
+                      placeholder="Buscar produto pelo nome ou descrição..."
+                      aria-label="Buscar produtos"
+                      className="w-full rounded-xl bg-zinc-950 border border-zinc-800 px-4 py-3 text-sm text-white placeholder:text-zinc-500 focus:border-amber-500 focus:outline-none min-h-[44px]"
+                    />
+                  </div>
+
                   {/* List of Products for Image Management */}
                   <div className="space-y-4">
-                    {products.map((product) => {
+                    {products
+                      .filter((product) => {
+                        const query = productSearch.trim().toLocaleLowerCase('pt-BR');
+                        return !query || product.name.toLocaleLowerCase('pt-BR').includes(query)
+                          || product.description.toLocaleLowerCase('pt-BR').includes(query);
+                      })
+                      .map((product) => {
                       const isDefaultLogo = product.imageUrl === OFFICIAL_LOGO_URL;
 
                       return (
@@ -514,6 +595,18 @@ export const AdminModal: React.FC = () => {
                               )}
                             </div>
                           </div>
+                          <div className="flex items-center justify-between gap-3 border-t border-zinc-800 pt-3">
+                            <span className={`text-[11px] font-bold uppercase tracking-wide ${product.active ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                              {product.active ? 'Visível no cardápio' : 'Produto oculto'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => updateProduct(product.id, { active: !product.active })}
+                              className={`px-3 py-2 rounded-lg text-[11px] font-bold transition-colors min-h-[40px] ${product.active ? 'bg-red-950/50 text-red-300 border border-red-800/60 hover:bg-red-900/60' : 'bg-emerald-950/50 text-emerald-300 border border-emerald-800/60 hover:bg-emerald-900/60'}`}
+                            >
+                              {product.active ? 'Ocultar produto' : 'Reativar produto'}
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
@@ -589,6 +682,19 @@ export const AdminModal: React.FC = () => {
                     </div>
                   </div>
 
+                  <form onSubmit={handleCreateProduct} className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-3">
+                    <h4 className="text-sm font-bold text-amber-400">Cadastrar novo produto</h4>
+                    <input value={newProductName} onChange={(e) => setNewProductName(e.target.value)} maxLength={80} required placeholder="Nome do produto" className="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-sm text-white" />
+                    <textarea value={newProductDescription} onChange={(e) => setNewProductDescription(e.target.value)} maxLength={240} rows={2} placeholder="Descrição (opcional)" className="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-sm text-white" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <input value={newProductPrice} onChange={(e) => setNewProductPrice(e.target.value)} inputMode="decimal" required placeholder="Preço (ex.: 15,00)" className="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-sm text-white" />
+                      <select value={newProductType} onChange={(e) => setNewProductType(e.target.value as 'individual' | 'combo')} className="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-sm text-white">
+                        <option value="individual">Individual</option><option value="combo">Combo</option>
+                      </select>
+                    </div>
+                    {productCreateError && <p role="alert" className="text-xs text-red-300">{productCreateError}</p>}
+                    <button type="submit" disabled={isCreatingProduct} className="w-full sm:w-auto px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold text-xs min-h-[44px]">{isCreatingProduct ? 'Cadastrando...' : 'Adicionar produto'}</button>
+                  </form>
                   <div className="space-y-3">
                     {products.map((product) => (
                       <div
@@ -619,9 +725,33 @@ export const AdminModal: React.FC = () => {
                                   {product.category === 'individual' ? 'Individual' : 'Combo'}
                                 </span>
                               </div>
-                              <p className="text-xs text-zinc-400 truncate max-w-xs sm:max-w-md">
-                                {product.description}
-                              </p>
+                              <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+                                <input
+                                  type="text"
+                                  aria-label={`Nome do produto ${product.name}`}
+                                  defaultValue={product.name}
+                                  maxLength={80}
+                                  onBlur={(e) => {
+                                    const name = e.target.value.trim();
+                                    if (name && name !== product.name) updateProduct(product.id, { name });
+                                    else e.target.value = product.name;
+                                  }}
+                                  className="w-full min-w-0 px-2 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-white focus:outline-none focus:border-amber-500"
+                                  placeholder="Nome do produto"
+                                />
+                                <input
+                                  type="text"
+                                  aria-label={`Descrição do produto ${product.name}`}
+                                  defaultValue={product.description}
+                                  maxLength={240}
+                                  onBlur={(e) => {
+                                    const description = e.target.value.trim();
+                                    if (description !== product.description) updateProduct(product.id, { description });
+                                  }}
+                                  className="w-full min-w-0 px-2 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 focus:outline-none focus:border-amber-500"
+                                  placeholder="Descrição do produto"
+                                />
+                              </div>
                             </div>
                           </div>
 
