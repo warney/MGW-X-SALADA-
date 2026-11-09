@@ -77,7 +77,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
   const [config, setConfig] = useState<StoreConfig>(() => {
     try { const saved = localStorage.getItem(storageKeys.CONFIG); return saved ? { ...INITIAL_STORE_CONFIG, ...JSON.parse(saved) } : (isLegacyStore ? INITIAL_STORE_CONFIG : { ...INITIAL_STORE_CONFIG, storeName: 'Cardápio indisponível', whatsappNumber: '' }); }
-    catch { return INITIAL_STORE_CONFIG; }
+    catch { return isLegacyStore ? INITIAL_STORE_CONFIG : { ...INITIAL_STORE_CONFIG, storeName: 'Cardápio indisponível', whatsappNumber: '' }; }
   });
   const [cart, setCart] = useState<CartItem[]>(() => {
     try { const saved = localStorage.getItem(storageKeys.CART); return saved ? JSON.parse(saved) : []; }
