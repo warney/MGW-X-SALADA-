@@ -20,4 +20,6 @@ export const supabase = createClient(
 );
 
 export const ADMIN_EMAIL = 'warney.fernandes22@gmail.com';
+export const SUPER_ADMIN_EMAIL = 'warney.fernandes22@gmail.com';
+export const SUPER_ADMIN_UUID = '9ea5631d-5045-480b-bd77-8d2ca50c6222';
 export const PRODUCT_IMAGE_BUCKET = 'product-images';
