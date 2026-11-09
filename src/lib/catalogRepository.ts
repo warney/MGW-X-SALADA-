@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import type { StoreCategory, StoreId } from '../types/saas';
 import { normalizeCatalogPage } from './catalogPagination';
+import { mapCatalogProduct, mapCatalogCategory } from './catalogMappers';
 import { validateCatalogProduct, validateCatalogCategory } from './catalogValidation';
 import type { CatalogProductInput, CatalogCategoryInput, CatalogProductType } from './catalogTypes';
 
@@ -39,50 +40,6 @@ export interface CatalogPage<T> {
   total: number;
 }
 
-function mapProduct(row: any): CatalogProduct {
-  if (!row || typeof row.id !== 'string' || typeof row.store_id !== 'string' ||
-      typeof row.name !== 'string' || !['individual', 'combo'].includes(row.product_type) ||
-      !Number.isFinite(Number(row.price)) || typeof row.created_at !== 'string' ||
-      typeof row.updated_at !== 'string') {
-    throw new Error('O banco retornou um produto em formato inválido.');
-  }
-  return {
-    id: row.id,
-    storeId: row.store_id,
-    name: row.name,
-    productType: row.product_type,
-    categoryId: typeof row.category_id === 'string' ? row.category_id : null,
-    description: typeof row.description === 'string' ? row.description : '',
-    price: Number(row.price),
-    imageUrl: typeof row.image_url === 'string' ? row.image_url : null,
-    active: row.active !== false,
-    highlight: typeof row.highlight === 'string' ? row.highlight : null,
-    includedItems: Array.isArray(row.included_items) ? row.included_items.filter((item: unknown): item is string => typeof item === 'string') : [],
-    sortOrder: Number.isInteger(row.sort_order) ? row.sort_order : 0,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
-function mapCategory(row: any): StoreCategory {
-  if (!row || typeof row.id !== 'string' || typeof row.store_id !== 'string' ||
-      typeof row.name !== 'string' || typeof row.slug !== 'string' ||
-      typeof row.created_at !== 'string' || typeof row.updated_at !== 'string') {
-    throw new Error('O banco retornou uma categoria em formato inválido.');
-  }
-  return {
-    id: row.id,
-    storeId: row.store_id,
-    name: row.name,
-    slug: row.slug,
-    description: typeof row.description === 'string' ? row.description : undefined,
-    active: row.active !== false,
-    sortOrder: Number.isInteger(row.sort_order) ? row.sort_order : 0,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
 /**
  * Repositório de catálogo preparado para o esquema multi-loja.
  * Não deve ser conectado à UI antes da migração de banco e RLS.
@@ -100,7 +57,7 @@ export const catalogRepository = {
     const { data, error, count } = await query.order('sort_order', { ascending: true })
       .order('name', { ascending: true }).range(paging.from, paging.to);
     if (error) throw error;
-    return { items: (data ?? []).map(mapProduct), page: paging.page, pageSize: paging.pageSize, total: count ?? 0 };
+    return { items: (data ?? []).map(mapCatalogProduct), page: paging.page, pageSize: paging.pageSize, total: count ?? 0 };
   },
 
   async saveProduct(storeId: StoreId, input: CatalogProductInput, productId?: string): Promise<CatalogProduct> {
@@ -124,7 +81,7 @@ export const catalogRepository = {
       : await supabase.from('store_products').insert(payload).select('*').single();
     if (result.error) throw result.error;
     if (!result.data) throw new Error('Produto não encontrado nesta loja ou sem permissão para alterá-lo.');
-    return mapProduct(result.data);
+    return mapCatalogProduct(result.data);
   },
 
   async setProductActive(storeId: StoreId, productId: string, active: boolean): Promise<void> {
@@ -141,7 +98,7 @@ export const catalogRepository = {
     if (!includeInactive) query = query.eq('active', true);
     const { data, error } = await query.order('sort_order', { ascending: true }).order('name', { ascending: true });
     if (error) throw error;
-    return (data ?? []).map(mapCategory);
+    return (data ?? []).map(mapCatalogCategory);
   },
 
   async saveCategory(storeId: StoreId, input: CatalogCategoryInput, categoryId?: string): Promise<StoreCategory> {
@@ -154,7 +111,7 @@ export const catalogRepository = {
       : await supabase.from('store_categories').insert(payload).select('*').single();
     if (result.error) throw result.error;
     if (!result.data) throw new Error('Categoria não encontrada nesta loja ou sem permissão.');
-    return mapCategory(result.data);
+    return mapCatalogCategory(result.data);
   },
 
   async setCategoryActive(storeId: StoreId, categoryId: string, active: boolean): Promise<void> {
