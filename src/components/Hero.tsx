@@ -1,10 +1,12 @@
 import React from 'react';
 import { ArrowDown, Flame, CheckCircle2 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { useStoreIdentity } from '../context/StoreIdentityContext';
 import { OFFICIAL_LOGO_URL, HERO_BURGER_IMAGE } from '../data/defaultData';
 
 export const Hero: React.FC = () => {
-  const { config, setIsCartOpen, cartCount } = useStore();
+  const { config, setIsCartOpen, cartCount, isLegacyStore } = useStore();
+  const { store } = useStoreIdentity();
 
   const scrollToMenu = () => {
     const menuEl = document.getElementById('cardapio-section');
@@ -26,7 +28,7 @@ export const Hero: React.FC = () => {
           <div className="absolute inset-0">
             <img
               src={HERO_BURGER_IMAGE}
-              alt="Hambúrguer artesanal MGW X-Salada"
+              alt="Destaque do Cardápio"
               loading="eager"
               decoding="async"
               fetchPriority="high"
@@ -48,26 +50,46 @@ export const Hero: React.FC = () => {
               {/* Title & Slogan */}
               <div className="space-y-1">
                 <h1 className="font-display font-black text-2xl sm:text-4xl md:text-5xl text-white tracking-tight leading-tight">
-                  Bem-vindo à <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-300 to-red-500">MGW X-Salada!</span>
+                  Bem-vindo à{' '}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-300 to-red-500">
+                    {isLegacyStore ? 'MGW X-Salada!' : `${config.storeName || store?.name || 'nossa loja'}!`}
+                  </span>
                 </h1>
                 <p className="text-base sm:text-lg md:text-xl font-medium text-amber-200/90 italic font-display">
-                  "{config.slogan || 'Sempre uma boa escolha!'}"
+                  "{config.slogan || (isLegacyStore ? 'Sempre uma boa escolha!' : 'Sabor e qualidade direto para você!')}"
                 </p>
               </div>
 
               {/* Short description */}
               <p className="text-zinc-300 text-xs sm:text-sm md:text-base leading-relaxed">
-                O legítimo X-Salada com pão brioche macio, hambúrguer suculento, queijo derretido, presunto de peru, ovo e salada fresca. Acompanhado do inconfundível <strong className="text-amber-400 font-semibold">Guaraná Tuchaua</strong> geladinho!
+                {isLegacyStore ? (
+                  <>
+                    O legítimo X-Salada com pão brioche macio, hambúrguer suculento, queijo derretido, presunto de peru, ovo e salada fresca. Acompanhado do inconfundível{' '}
+                    <strong className="text-amber-400 font-semibold">Guaraná Tuchaua</strong> geladinho!
+                  </>
+                ) : (
+                  <>
+                    Confira nossos pratos e lanches preparados na hora com ingredientes selecionados. Faça seu pedido diretamente pelo nosso cardápio online com envio direto para o WhatsApp!
+                  </>
+                )}
               </p>
 
               {/* Trust markers */}
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 sm:gap-3 pt-1 text-[11px] sm:text-xs text-zinc-300">
-                <span className="flex items-center gap-1.5 bg-black/50 px-2.5 sm:px-3 py-1 rounded-lg border border-zinc-800">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" /> Pão Brioche
-                </span>
-                <span className="flex items-center gap-1.5 bg-black/50 px-2.5 sm:px-3 py-1 rounded-lg border border-zinc-800">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" /> Guaraná Tuchaua
-                </span>
+                {isLegacyStore ? (
+                  <>
+                    <span className="flex items-center gap-1.5 bg-black/50 px-2.5 sm:px-3 py-1 rounded-lg border border-zinc-800">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" /> Pão Brioche
+                    </span>
+                    <span className="flex items-center gap-1.5 bg-black/50 px-2.5 sm:px-3 py-1 rounded-lg border border-zinc-800">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" /> Guaraná Tuchaua
+                    </span>
+                  </>
+                ) : (
+                  <span className="flex items-center gap-1.5 bg-black/50 px-2.5 sm:px-3 py-1 rounded-lg border border-zinc-800">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" /> Ingredientes Frescos
+                  </span>
+                )}
                 <span className="flex items-center gap-1.5 bg-black/50 px-2.5 sm:px-3 py-1 rounded-lg border border-zinc-800">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Pedido via WhatsApp
                 </span>
@@ -86,7 +108,7 @@ export const Hero: React.FC = () => {
                 {cartCount > 0 && (
                   <button
                     onClick={() => setIsCartOpen(true)}
-                    className="w-full sm:w-auto px-5 py-3.5 sm:py-4 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-amber-500/40 text-amber-300 font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 min-h-[48px]"
+                    className="w-full sm:w-auto px-5 py-3.5 sm:py-4 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-amber-500/40 text-amber-300 font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 min-h-[48px] cursor-pointer"
                   >
                     <span>Ver Carrinho ({cartCount})</span>
                   </button>
@@ -99,7 +121,7 @@ export const Hero: React.FC = () => {
               <div className="relative w-40 h-40 sm:w-52 sm:h-52 md:w-64 md:h-64 rounded-full p-2 bg-gradient-to-b from-amber-400/40 via-red-600/30 to-zinc-900 border-2 border-amber-500/50 shadow-2xl flex items-center justify-center">
                 <img
                   src={OFFICIAL_LOGO_URL}
-                  alt="Logo Oficial MGW X-Salada"
+                  alt={config.storeName || 'Logo'}
                   loading="eager"
                   decoding="async"
                   referrerPolicy="no-referrer"
@@ -109,7 +131,7 @@ export const Hero: React.FC = () => {
 
               <div className="mt-2.5 flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold text-zinc-400">
                 <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <span>MGW X-SALADA • ORIGINAL</span>
+                <span>{isLegacyStore ? 'MGW X-SALADA • ORIGINAL' : (config.storeName || 'CARDÁPIO DIGITAL')}</span>
               </div>
             </div>
           </div>
