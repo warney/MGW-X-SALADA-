@@ -23,6 +23,7 @@ interface StoreContextType {
   removeFromCart: (cartId: string) => void;
   updateNotes: (cartId: string, notes: string) => void;
   clearCart: () => void;
+  addProduct: (product: Product) => Promise<void>;
   updateProduct: (id: string, updates: Partial<Product>) => void;
   setProductImage: (id: string, dataUrl: string) => Promise<void>;
   deleteProductImage: (id: string) => Promise<void>;
@@ -130,6 +131,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const updateNotes = (cartId: string, notes: string) => setCart((prev) => prev.map((i) => i.cartId === cartId ? { ...i, notes } : i));
   const clearCart = () => setCart([]);
 
+  const addProduct = async (product: Product) => {
+    if (!isLegacyStore) throw new Error('Esta loja ainda não está conectada ao banco multi-loja.');
+    if (products.some((item) => item.id === product.id)) throw new Error('Já existe um produto com este identificador.');
+    const { error } = await supabase.from('store_products').insert(toProductRow(product));
+    if (error) throw error;
+    setProducts((prev) => [...prev, product]);
+  };
+
   const updateProduct = (id: string, updates: Partial<Product>) => {
     const current = products.find((p) => p.id === id);
     if (!current) return;
@@ -207,7 +216,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return <StoreContext.Provider value={{
     products, config, cart, cartCount, cartTotal, activeCategory, setActiveCategory,
     isCartOpen, setIsCartOpen, isCheckoutOpen, setIsCheckoutOpen, isAdminOpen, setIsAdminOpen,
-    addToCart, updateQuantity, removeFromCart, updateNotes, clearCart, updateProduct,
+    addToCart, updateQuantity, removeFromCart, updateNotes, clearCart, addProduct, updateProduct,
     setProductImage, deleteProductImage, updateConfig, resetToDefaults, refreshMenuFromServer,
   }}>{children}</StoreContext.Provider>;
 };
