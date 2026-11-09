@@ -3,26 +3,9 @@ import type { StoreCategory, StoreId } from '../types/saas';
 import { normalizeCatalogPage } from './catalogPagination';
 import { mapCatalogProduct, mapCatalogCategory } from './catalogMappers';
 import { validateCatalogProduct, validateCatalogCategory } from './catalogValidation';
-import type { CatalogProductInput, CatalogCategoryInput, CatalogProductType } from './catalogTypes';
+import type { CatalogProduct, CatalogProductInput, CatalogCategoryInput, CatalogProductType } from './catalogTypes';
 
 
-
-export interface CatalogProduct {
-  id: string;
-  storeId: StoreId;
-  name: string;
-  productType: CatalogProductType;
-  categoryId: string | null;
-  description: string;
-  price: number;
-  imageUrl: string | null;
-  active: boolean;
-  highlight: string | null;
-  includedItems: string[];
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export interface CatalogPageOptions {
   page?: number;
