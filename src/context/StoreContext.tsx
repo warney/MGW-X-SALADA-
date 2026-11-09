@@ -143,11 +143,29 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const current = products.find((p) => p.id === id);
     if (!current) return;
     const next = { ...current, ...updates };
-    setProducts((prev) => prev.map((p) => p.id === id ? next : p));
-    setCart((prev) => prev.map((i) => i.productId === id ? { ...i, product: { ...i.product, ...updates } } : i));
-    if (!isLegacyStore) return;
-    supabase.from('store_products').upsert(toProductRow(next), { onConflict: 'id' })
-      .then(({ error }) => { if (error) console.error('Erro ao salvar produto no Supabase:', error); });
+
+    // Em lojas ainda não migradas, mantém o comportamento local isolado.
+    if (!isLegacyStore) {
+      setProducts((prev) => prev.map((p) => p.id === id ? next : p));
+      setCart((prev) => prev.map((i) => i.productId === id ? { ...i, product: next } : i));
+      return;
+    }
+
+    // Só confirma a alteração na interface depois que o banco confirmar.
+    // Isso evita exibir uma edição como salva quando o Supabase a rejeita.
+    void (async () => {
+      const { error } = await supabase.from('store_products')
+        .update(toProductRow(next))
+        .eq('id', id)
+        .select('id')
+        .maybeSingle();
+      if (error) {
+        console.error('Erro ao salvar produto no Supabase:', error);
+        return;
+      }
+      setProducts((prev) => prev.map((p) => p.id === id ? next : p));
+      setCart((prev) => prev.map((i) => i.productId === id ? { ...i, product: next } : i));
+    })().catch((error) => console.error('Falha inesperada ao salvar produto:', error));
   };
 
   const setProductImage = async (id: string, dataUrl: string) => {
