@@ -57,8 +57,32 @@ const formatCategoryName = (category: string) =>
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
 const MenuContent: React.FC = () => {
-  const { products, activeCategory, config, setIsAdminOpen } = useStore();
+  const { products, activeCategory, config, isAdminOpen, setIsAdminOpen } = useStore();
   const { storeSlug, store, stores, isExplicitSelection, navigateToStore } = useStoreIdentity();
+
+  // Escuta rota ou hash #admin para abrir diretamente o painel
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const checkAdminRoute = () => {
+        if (
+          window.location.hash === '#admin' ||
+          window.location.pathname.endsWith('/admin') ||
+          window.location.search.includes('admin=true')
+        ) {
+          setIsAdminOpen(true);
+        }
+      };
+      checkAdminRoute();
+      window.addEventListener('hashchange', checkAdminRoute);
+      return () => window.removeEventListener('hashchange', checkAdminRoute);
+    }
+  }, [setIsAdminOpen]);
+
+  // Se o painel administrativo estiver aberto, renderiza a página completa do Admin (Full-Screen SaaS)
+  // Sem cardápio ao fundo, sem overlay escurecido, sem modal flutuante
+  if (isAdminOpen) {
+    return <AdminModal />;
+  }
 
   // Se o visitante acessou uma URL específica (/s/:slug) que não existe
   if (isExplicitSelection && !store && stores.length > 0) {
