@@ -45,7 +45,7 @@ export const StoreIdentityProvider: React.FC<StoreIdentityProviderProps> = ({
   hostToSlug,
 }) => {
   const [currentPath, setCurrentPath] = useState(() => (typeof window !== 'undefined' ? window.location.pathname : '/'));
-  const [internalStores, setInternalStores] = useState<Store[]>(() => getLocalStores());
+  const [internalStores, setInternalStores] = useState<Store[]>([]);
   const [user, setUser] = useState<any>(null);
 
   // Carrega lista de lojas caso não tenham sido passadas explicitamente
@@ -54,8 +54,9 @@ export const StoreIdentityProvider: React.FC<StoreIdentityProviderProps> = ({
     try {
       const list = await storeService.listStores();
       setInternalStores(list);
-    } catch {
-      setInternalStores(getLocalStores());
+    } catch (error) {
+      console.error('Falha ao carregar lojas do Supabase:', error);
+      setInternalStores([]);
     }
   }, [explicitStores]);
 
