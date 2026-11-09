@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useMemo, useState, useEffect, useCallback } from 'react';
 import type { Store, StoreSlug } from '../types/saas';
 import { normalizeStoreSlug, resolveStore, type StoreResolutionSource } from '../lib/storeResolver';
-import { storeService, getLocalStores, DEFAULT_MGW_STORE } from '../lib/storeService';
+import { storeService, DEFAULT_MGW_STORE } from '../lib/storeService';
 import { supabase } from '../lib/supabase';
 import { resolveAuthIdentity } from '../lib/authIdentity';
 
