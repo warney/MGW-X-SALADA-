@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { validateStoreInput, storeService, DEFAULT_MGW_STORE } from './storeService';
 import { SUPER_ADMIN_EMAIL, SUPER_ADMIN_UUID } from './supabase';
 
-test('storeService: detects Super Admin by email and by UUID', () => {
-  assert.equal(storeService.isSuperAdminUser(SUPER_ADMIN_EMAIL, 'any-id'), true);
-  assert.equal(storeService.isSuperAdminUser('WARNEY.FERNANDES22@GMAIL.COM', null), true);
+test('storeService: Super Admin privilege requires the authenticated UUID', () => {
+  assert.equal(storeService.isSuperAdminUser(SUPER_ADMIN_EMAIL, 'any-id'), false);
+  assert.equal(storeService.isSuperAdminUser('WARNEY.FERNANDES22@GMAIL.COM', null), false);
   assert.equal(storeService.isSuperAdminUser(null, SUPER_ADMIN_UUID), true);
   assert.equal(storeService.isSuperAdminUser('outro@gmail.com', 'other-uuid'), false);
   assert.equal(storeService.isSuperAdminUser(null, null), false);
