@@ -46,21 +46,42 @@ export const AdminModal: React.FC = () => {
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Check auth session whenever admin opens
+  const canManageSelectedStore = useCallback(async (userId: string) => {
+    if (!store?.id) return false;
+    const { data, error } = await supabase
+      .from('store_memberships')
+      .select('id')
+      .eq('store_id', store.id)
+      .eq('user_id', userId)
+      .eq('active', true)
+      .maybeSingle();
+    return !error && Boolean(data);
+  }, [store?.id]);
+
+  // Revalidate access against the persisted membership whenever the panel opens.
   useEffect(() => {
     if (!isAdminOpen) return;
-    supabase.auth.getSession().then(({ data }) => {
+    let cancelled = false;
+    const verifySession = async () => {
+      const { data } = await supabase.auth.getSession();
       const identity = resolveAuthIdentity(data.session?.user);
-      const isPlatformSuperAdmin = storeService.isSuperAdminUser(identity?.email, identity?.userId);
-      if (isPlatformSuperAdmin) {
-        setIsAuthenticated(true);
-        setIsSuperAdmin(true);
-      } else if (identity?.email) {
-        setIsAuthenticated(true);
-        setIsSuperAdmin(false);
+      if (!identity) {
+        if (!cancelled) {
+          setIsAuthenticated(false);
+          setIsSuperAdmin(false);
+        }
+        return;
       }
-    });
-  }, [isAdminOpen]);
+      const superAdmin = storeService.isSuperAdminUser(identity.email, identity.userId);
+      const allowed = superAdmin || await canManageSelectedStore(identity.userId);
+      if (!cancelled) {
+        setIsAuthenticated(allowed);
+        setIsSuperAdmin(superAdmin && allowed);
+      }
+    };
+    void verifySession();
+    return () => { cancelled = true; };
+  }, [isAdminOpen, canManageSelectedStore]);
 
   const handleExitAdmin = useCallback(() => {
     setIsAdminOpen(false);
@@ -84,11 +105,20 @@ export const AdminModal: React.FC = () => {
       password: passwordInput,
     });
 
-    const identity = resolveAuthIdentity(data.user);
-    const superAdmin = storeService.isSuperAdminUser(cleanEmail, identity?.userId);
-
-    if (error && !superAdmin) {
+    if (error) {
       setAuthError('Não foi possível entrar. Confira o e-mail e a senha informados.');
+      return;
+    }
+
+    const identity = resolveAuthIdentity(data.user);
+    if (!identity) {
+      setAuthError('Não foi possível validar a identidade da sessão.');
+      return;
+    }
+    const superAdmin = storeService.isSuperAdminUser(identity.email, identity.userId);
+    const allowed = superAdmin || await canManageSelectedStore(identity.userId);
+    if (!allowed) {
+      setAuthError('Sua conta não possui acesso administrativo a este estabelecimento.');
       return;
     }
 
