@@ -44,6 +44,7 @@ export const AdminModal: React.FC = () => {
     isAdminOpen,
     setIsAdminOpen,
     updateProduct,
+    addProduct,
     setProductImage,
     deleteProductImage,
     updateConfig,
@@ -56,6 +57,12 @@ export const AdminModal: React.FC = () => {
   const [authError, setAuthError] = useState('');
   const [activeTab, setActiveTab] = useState<'whatsapp' | 'images' | 'prices' | 'store'>('images');
   const [saveFeedback, setSaveFeedback] = useState(false);
+  const [newProductName, setNewProductName] = useState('');
+  const [newProductDescription, setNewProductDescription] = useState('');
+  const [newProductPrice, setNewProductPrice] = useState('');
+  const [newProductType, setNewProductType] = useState<'individual' | 'combo'>('individual');
+  const [productCreateError, setProductCreateError] = useState('');
+  const [isCreatingProduct, setIsCreatingProduct] = useState(false);
 
   // Form local states for editing
   const [tempWhatsapp, setTempWhatsapp] = useState(config.whatsappNumber);
@@ -122,6 +129,32 @@ export const AdminModal: React.FC = () => {
 
     setSaveFeedback(true);
     setTimeout(() => setSaveFeedback(false), 2000);
+  };
+
+  const handleCreateProduct = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setProductCreateError('');
+    const name = newProductName.trim();
+    const description = newProductDescription.trim();
+    const price = Number(newProductPrice.replace(',', '.'));
+    if (!name) { setProductCreateError('Informe o nome do produto.'); return; }
+    if (!Number.isFinite(price) || price < 0) { setProductCreateError('Informe um preço válido.'); return; }
+    const product: Product = {
+      id: `product-${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`}`,
+      name, description, price, category: newProductType, imageUrl: OFFICIAL_LOGO_URL,
+      active: true, includedItems: [],
+    };
+    setIsCreatingProduct(true);
+    try {
+      await addProduct(product);
+      setNewProductName('');
+      setNewProductDescription('');
+      setNewProductPrice('');
+      setNewProductType('individual');
+      setImageSuccess(`Produto "${name}" cadastrado com sucesso.`);
+    } catch (err: unknown) {
+      setProductCreateError(err instanceof Error ? err.message : 'Não foi possível cadastrar o produto.');
+    } finally { setIsCreatingProduct(false); }
   };
 
   const handlePriceChange = (productId: string, newPriceStr: string) => {
@@ -591,6 +624,19 @@ export const AdminModal: React.FC = () => {
                     </div>
                   </div>
 
+                  <form onSubmit={handleCreateProduct} className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-3">
+                    <h4 className="text-sm font-bold text-amber-400">Cadastrar novo produto</h4>
+                    <input value={newProductName} onChange={(e) => setNewProductName(e.target.value)} maxLength={80} required placeholder="Nome do produto" className="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-sm text-white" />
+                    <textarea value={newProductDescription} onChange={(e) => setNewProductDescription(e.target.value)} maxLength={240} rows={2} placeholder="Descrição (opcional)" className="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-sm text-white" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <input value={newProductPrice} onChange={(e) => setNewProductPrice(e.target.value)} inputMode="decimal" required placeholder="Preço (ex.: 15,00)" className="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-sm text-white" />
+                      <select value={newProductType} onChange={(e) => setNewProductType(e.target.value as 'individual' | 'combo')} className="w-full px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-sm text-white">
+                        <option value="individual">Individual</option><option value="combo">Combo</option>
+                      </select>
+                    </div>
+                    {productCreateError && <p role="alert" className="text-xs text-red-300">{productCreateError}</p>}
+                    <button type="submit" disabled={isCreatingProduct} className="w-full sm:w-auto px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold text-xs min-h-[44px]">{isCreatingProduct ? 'Cadastrando...' : 'Adicionar produto'}</button>
+                  </form>
                   <div className="space-y-3">
                     {products.map((product) => (
                       <div
